@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Обратная связь</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .radio-option input[type="radio"] {
+            width: auto;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #0051d5;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .success {
+            background: #34c759;
+            text-align: center;
+        }
+        
+        .error {
+            background: #ff3b30;
+            text-align: center;
+        }
+        
+        .info {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #0051d5;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-top-color: #007aff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка...</p>
+        </div>
+    </div>
+
+    <script>
+        // Парсинг URL параметров
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('start'); // 'register' или 'question'
+        const userId = urlParams.get('userId');
+        
+        // Функция отправки данных в бот
+        async function sendToBot(command, data) {
+            // В MAX Mini App можно использовать WebApp API
+            // Пока используем простой способ — открываем ссылку на бота
+            const botUsername = 'ВАШ_НИК_БОТА'; // Замените на ник вашего бота
+            const encodedData = encodeURIComponent(JSON.stringify(data));
+            const url = `https://max.ru/${botUsername}?startapp=${command}:${encodedData}`;
+            
+            // В MAX открываем через WebApp API если доступно
+            if (window.TelegramWebApp) {
+                window.TelegramWebApp.close();
+                window.location.href = url;
+            } else {
+                window.location.href = url;
+            }
+        }
+        
+        // Компонент регистрации
+        function RegistrationForm() {
+            return `
+                <div class="card">
+                    <h1>📝 Регистрация</h1>
+                    <div class="subtitle">Пожалуйста, заполните форму для обратной связи</div>
+                    
+                    <div class="form-group">
+                        <label>ФИО полностью *</label>
+                        <input type="text" id="fullName" placeholder="Иванов Иван Иванович" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Тип пользователя *</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="userType" value="parent"> Родитель
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="userType" value="student"> Студент
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="userType" value="teacher"> Преподаватель
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button onclick="submitRegistration()">Зарегистрироваться</button>
+                </div>
+            `;
+        }
+        
+        // Компонент вопроса
+        function QuestionForm() {
+            return `
+                <div class="card">
+                    <h1>✏️ Задать вопрос</h1>
+                    <div class="subtitle">Опишите ваш вопрос подробнее</div>
+                    
+                    <div class="info">
+                        💡 Ваш вопрос будет передан администратору. Ответ придет в чат с ботом.
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Ваш вопрос *</label>
+                        <textarea id="question" placeholder="Напишите здесь ваш вопрос..."></textarea>
+                    </div>
+                    
+                    <button onclick="submitQuestion()">Отправить вопрос</button>
+                </div>
+            `;
+        }
+        
+        // Компонент успеха
+        function SuccessScreen(message) {
+            return `
+                <div class="card">
+                    <div class="success" style="background: #34c759; color: white; padding: 20px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 8px;">✅</div>
+                        <div style="font-weight: 600; margin-bottom: 8px;">Успешно!</div>
+                        <div style="font-size: 14px;">${message}</div>
+                    </div>
+                    <div style="margin-top: 16px; text-align: center;">
+                        <small>Теперь вы можете закрыть это окно</small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Компонент ошибки
+        function ErrorScreen(message) {
+            return `
+                <div class="card">
+                    <div class="error" style="background: #ff3b30; color: white; padding: 20px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 8px;">❌</div>
+                        <div style="font-weight: 600; margin-bottom: 8px;">Ошибка</div>
+                        <div style="font-size: 14px;">${message}</div>
+                    </div>
+                    <div style="margin-top: 16px; text-align: center;">
+                        <button onclick="location.reload()">Попробовать снова</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Функции отправки
+        window.submitRegistration = function() {
+            const fullName = document.getElementById('fullName')?.value.trim();
+            const userType = document.querySelector('input[name="userType"]:checked')?.value;
+            
+            if (!fullName) {
+                alert('Пожалуйста, введите ФИО');
+                return;
+            }
+            
+            if (!userType) {
+                alert('Пожалуйста, выберите тип пользователя');
+                return;
+            }
+            
+            const data = { fullName, userType };
+            sendToBot('register', data);
+        };
+        
+        window.submitQuestion = function() {
+            const question = document.getElementById('question')?.value.trim();
+            
+            if (!question) {
+                alert('Пожалуйста, введите ваш вопрос');
+                return;
+            }
+            
+            if (question.length < 10) {
+                alert('Пожалуйста, напишите вопрос подробнее (минимум 10 символов)');
+                return;
+            }
+            
+            const data = { question };
+            sendToBot('question', data);
+        };
+        
+        // Рендеринг приложения
+        function render() {
+            const app = document.getElementById('app');
+            
+            if (mode === 'register') {
+                app.innerHTML = RegistrationForm();
+            } else if (mode === 'question') {
+                app.innerHTML = QuestionForm();
+            } else {
+                app.innerHTML = ErrorScreen('Неизвестный режим. Пожалуйста, откройте форму через бота.');
+            }
+        }
+        
+        render();
+    </script>
+</body>
+</html>
