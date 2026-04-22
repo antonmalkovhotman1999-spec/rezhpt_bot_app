@@ -111,28 +111,9 @@
             transform: scale(0.98);
         }
         
-        .success {
-            background: #34c759;
-            text-align: center;
-        }
-        
-        .error {
-            background: #ff3b30;
-            text-align: center;
-        }
-        
-        .info {
-            background: #e3f2fd;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 14px;
-            color: #0051d5;
-        }
-        
         .loading {
             text-align: center;
-            padding: 20px;
+            padding: 40px;
             color: #666;
         }
         
@@ -142,12 +123,46 @@
         
         .spinner {
             display: inline-block;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border: 2px solid #ddd;
             border-top-color: #007aff;
             border-radius: 50%;
             animation: spin 0.6s linear infinite;
+        }
+        
+        .success {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .success-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        
+        .success-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #34c759;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        
+        .error-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ff3b30;
         }
     </style>
 </head>
@@ -155,34 +170,24 @@
     <div class="container" id="app">
         <div class="loading">
             <div class="spinner"></div>
-            <p>Загрузка...</p>
+            <p style="margin-top: 12px;">Загрузка...</p>
         </div>
     </div>
 
     <script>
-        // Парсинг URL параметров
         const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('start'); // 'register' или 'question'
+        const mode = urlParams.get('mode');
         const userId = urlParams.get('userId');
         
-        // Функция отправки данных в бот
-        async function sendToBot(command, data) {
-            // В MAX Mini App можно использовать WebApp API
-            // Пока используем простой способ — открываем ссылку на бота
-            const botUsername = 'ВАШ_НИК_БОТА'; // Замените на ник вашего бота
+        // Функция отправки данных в бот через startapp
+        function sendToBot(command, data) {
+            const botUsername = 'ВАШ_НИК_БОТА'; // ЗАМЕНИТЕ на ник вашего бота
             const encodedData = encodeURIComponent(JSON.stringify(data));
             const url = `https://max.ru/${botUsername}?startapp=${command}:${encodedData}`;
-            
-            // В MAX открываем через WebApp API если доступно
-            if (window.TelegramWebApp) {
-                window.TelegramWebApp.close();
-                window.location.href = url;
-            } else {
-                window.location.href = url;
-            }
+            window.location.href = url;
         }
         
-        // Компонент регистрации
+        // Форма регистрации
         function RegistrationForm() {
             return `
                 <div class="card">
@@ -191,7 +196,7 @@
                     
                     <div class="form-group">
                         <label>ФИО полностью *</label>
-                        <input type="text" id="fullName" placeholder="Иванов Иван Иванович" required>
+                        <input type="text" id="fullName" placeholder="Иванов Иван Иванович" autocomplete="name">
                     </div>
                     
                     <div class="form-group">
@@ -214,16 +219,12 @@
             `;
         }
         
-        // Компонент вопроса
+        // Форма вопроса
         function QuestionForm() {
             return `
                 <div class="card">
                     <h1>✏️ Задать вопрос</h1>
                     <div class="subtitle">Опишите ваш вопрос подробнее</div>
-                    
-                    <div class="info">
-                        💡 Ваш вопрос будет передан администратору. Ответ придет в чат с ботом.
-                    </div>
                     
                     <div class="form-group">
                         <label>Ваш вопрос *</label>
@@ -235,39 +236,42 @@
             `;
         }
         
-        // Компонент успеха
-        function SuccessScreen(message) {
+        // Экран успеха
+        function SuccessScreen(title, message) {
             return `
                 <div class="card">
-                    <div class="success" style="background: #34c759; color: white; padding: 20px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 8px;">✅</div>
-                        <div style="font-weight: 600; margin-bottom: 8px;">Успешно!</div>
-                        <div style="font-size: 14px;">${message}</div>
+                    <div class="success">
+                        <div class="success-icon">✅</div>
+                        <div class="success-title">${title}</div>
+                        <div class="subtitle">${message}</div>
                     </div>
-                    <div style="margin-top: 16px; text-align: center;">
-                        <small>Теперь вы можете закрыть это окно</small>
-                    </div>
+                    <button onclick="closeWindow()">Закрыть</button>
                 </div>
             `;
         }
         
-        // Компонент ошибки
+        // Экран ошибки
         function ErrorScreen(message) {
             return `
                 <div class="card">
-                    <div class="error" style="background: #ff3b30; color: white; padding: 20px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 8px;">❌</div>
-                        <div style="font-weight: 600; margin-bottom: 8px;">Ошибка</div>
-                        <div style="font-size: 14px;">${message}</div>
+                    <div class="error">
+                        <div class="error-icon">❌</div>
+                        <div class="error-title">Ошибка</div>
+                        <div class="subtitle">${message}</div>
                     </div>
-                    <div style="margin-top: 16px; text-align: center;">
-                        <button onclick="location.reload()">Попробовать снова</button>
-                    </div>
+                    <button onclick="location.reload()">Попробовать снова</button>
                 </div>
             `;
         }
         
-        // Функции отправки
+        function closeWindow() {
+            if (window.TelegramWebApp) {
+                window.TelegramWebApp.close();
+            } else {
+                window.close();
+            }
+        }
+        
         window.submitRegistration = function() {
             const fullName = document.getElementById('fullName')?.value.trim();
             const userType = document.querySelector('input[name="userType"]:checked')?.value;
@@ -303,7 +307,6 @@
             sendToBot('question', data);
         };
         
-        // Рендеринг приложения
         function render() {
             const app = document.getElementById('app');
             
@@ -311,6 +314,10 @@
                 app.innerHTML = RegistrationForm();
             } else if (mode === 'question') {
                 app.innerHTML = QuestionForm();
+            } else if (mode === 'success') {
+                const title = urlParams.get('title') || 'Успешно!';
+                const message = urlParams.get('message') || 'Операция выполнена';
+                app.innerHTML = SuccessScreen(title, message);
             } else {
                 app.innerHTML = ErrorScreen('Неизвестный режим. Пожалуйста, откройте форму через бота.');
             }
